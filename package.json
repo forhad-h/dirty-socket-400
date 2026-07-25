@@ -1,0 +1,30 @@
+{
+  "name": "dirty-socket-repro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Why a rapid follow-up message returns 400 through a streaming proxy — a real reproduction plus a browser simulator.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "repro": "node server/raw-repro.js",
+    "repro:broken": "node server/raw-repro.js --mode=broken",
+    "repro:fixed": "node server/raw-repro.js --mode=fixed",
+    "capture": "node server/capture.js",
+    "sim": "node server/serve-web.js",
+    "live": "node server/live-demo.js",
+    "test:e2e": "node server/e2e.js"
+  },
+  "comments": {
+    "dependencies": "Only `npm run live` needs these. `repro`, `capture` and `sim` run on a bare clone with nothing installed."
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-http-proxy": "^2.0.0",
+    "http-proxy-middleware": "^3.0.3"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}

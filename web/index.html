@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Dirty Socket — why a rapid follow-up returns 400</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <p class="eyebrow">Streaming proxy · post-mortem simulator</p>
+  <h1>The request that was never malformed</h1>
+  <p class="standfirst">
+    A user sends a chat message, then immediately sends another. The first stream is aborted —
+    completely normal. The second request comes back <strong>400 Bad Request</strong>.
+    Nothing is wrong with the second request. It was corrupted by the first one.
+  </p>
+  <p class="provenance" id="provenance">Replaying a real captured connection.</p>
+</header>
+
+<section class="controls" aria-label="Simulation controls">
+  <div class="modes" role="radiogroup" aria-label="Proxy behaviour">
+    <button class="mode is-active" data-mode="broken" role="radio" aria-checked="true">
+      <span class="dot dot-bad"></span>
+      <span>
+        <strong>Broken</strong>
+        <em>upstream request abandoned</em>
+      </span>
+    </button>
+    <button class="mode" data-mode="fixed" role="radio" aria-checked="false">
+      <span class="dot dot-good"></span>
+      <span>
+        <strong>Fixed</strong>
+        <em>proxyReq.destroy()</em>
+      </span>
+    </button>
+  </div>
+
+  <div class="transport">
+    <button id="btn-play" class="btn btn-primary">Play</button>
+    <button id="btn-step" class="btn">Step</button>
+    <button id="btn-reset" class="btn">Reset</button>
+    <label class="speed">
+      Speed
+      <input id="speed" type="range" min="0.25" max="3" step="0.25" value="1">
+      <output id="speed-out">1×</output>
+    </label>
+  </div>
+
+  <div class="scrub">
+    <input id="scrub" type="range" min="0" max="0" step="1" value="0" aria-label="Timeline position">
+    <span class="scrub-label"><span id="scrub-idx">0</span> / <span id="scrub-max">0</span></span>
+  </div>
+</section>
+
+<section class="stage" aria-label="Network topology">
+  <svg id="topology" viewBox="0 0 900 250" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-labelledby="topology-title">
+    <title id="topology-title">Client to proxy to upstream server, showing packets and socket state</title>
+
+    <!-- wires -->
+    <g class="wires">
+      <line id="wire-a" class="wire" x1="212" y1="130" x2="360" y2="130"></line>
+      <line id="wire-b" class="wire" x1="540" y1="130" x2="688" y2="130"></line>
+      <text id="wire-a-label" class="wire-label" x="286" y="158">Socket</text>
+      <text id="wire-b-label" class="wire-label" x="614" y="158">Socket</text>
+    </g>
+
+    <!-- nodes -->
+    <g class="node" id="node-client">
+      <rect x="42" y="72" width="170" height="116" rx="6"></rect>
+      <text class="node-name" x="127" y="124">Chatbot</text>
+      <text class="node-role" x="127" y="146">Client</text>
+      <text class="node-state" id="state-client" x="127" y="208"></text>
+    </g>
+
+    <g class="node" id="node-proxy">
+      <rect x="360" y="72" width="180" height="116" rx="6"></rect>
+      <text class="node-name" x="450" y="124">Proxy Server</text>
+      <text class="node-role" x="450" y="146">Proxy</text>
+      <text class="node-state" id="state-proxy" x="450" y="208"></text>
+    </g>
+
+    <g class="node" id="node-upstream">
+      <rect x="688" y="72" width="170" height="116" rx="6"></rect>
+      <text class="node-name" x="773" y="118">Upstream</text>
+      <text class="node-name" x="773" y="140">Server</text>
+      <text class="node-role" x="773" y="162">Upstream</text>
+      <text class="node-state" id="state-upstream" x="773" y="208"></text>
+    </g>
+
+    <g id="packets"></g>
+  </svg>
+
+  <p class="caption" id="stage-caption">Press <strong>Play</strong> to run the scenario.</p>
+</section>
+
+<section class="panels">
+
+  <article class="panel" id="panel-pool">
+    <h2>Keep-alive socket pool</h2>
+    <p class="panel-hint">
+      The proxy reuses sockets to the upstream. A socket that still owes body bytes is
+      <em>mid-message</em> — it must never go back in the pool.
+    </p>
+    <div id="pool" class="pool"></div>
+  </article>
+
+  <article class="panel" id="panel-wire">
+    <h2>Wire inspector</h2>
+    <p class="panel-hint">Actual bytes on the proxy → upstream socket.</p>
+    <div id="wire-view" class="wire-view">
+      <p class="empty">Nothing on the wire yet.</p>
+    </div>
+  </article>
+
+  <article class="panel" id="panel-log">
+    <h2>Event log</h2>
+    <p class="panel-hint">Exactly what the Node reproduction printed.</p>
+    <ol id="log" class="log"></ol>
+  </article>
+
+</section>
+
+<section class="verdict" id="verdict" hidden>
+  <div class="verdict-inner">
+    <span class="verdict-status" id="verdict-status"></span>
+    <p class="verdict-text" id="verdict-text"></p>
+  </div>
+</section>
+
+<section class="explainer">
+  <h2>What actually goes wrong</h2>
+
+  <ol class="mechanism">
+    <li>
+      <h3>The proxy starts forwarding</h3>
+      <p>
+        Headers and part of the JSON body go out on a pooled keep-alive socket. The header said
+        <code>Content-Length: 45</code>, so the upstream's parser now expects exactly 45 body bytes.
+      </p>
+    </li>
+    <li>
+      <h3>The user sends a follow-up, so the browser aborts</h3>
+      <p>
+        This is the normal path in a chat UI, not an edge case. The client is gone before the body
+        finished uploading.
+      </p>
+    </li>
+    <li>
+      <h3>The proxy drops the request but not the socket</h3>
+      <p>
+        It stops forwarding and answers the client. What it never does is destroy its
+        <em>upstream</em> request. Twenty-five body bytes were promised and never sent, and the
+        socket goes back in the pool looking perfectly idle.
+      </p>
+    </li>
+    <li>
+      <h3>The follow-up is written onto that same socket</h3>
+      <p>
+        HTTP has no message IDs — it is a byte stream, and position is the only thing that
+        distinguishes one message from the next. The upstream is still owed 25 body bytes, so it
+        takes them from the front of the new request:
+      </p>
+      <pre class="stitch"><span class="ok">{"message":"Hello",</span><span class="bad">POST /chat-stream HTTP/1.</span></pre>
+      <p>That is request #1's body now — a JSON fragment welded to a request line.</p>
+    </li>
+    <li>
+      <h3>The parser resyncs on garbage</h3>
+      <p>
+        Having satisfied the body, it looks for a new request line and finds
+        <code>1\r\nHost: …</code>. It reads <code>1</code> as an HTTP method, gives up with
+        <code>HPE_INVALID_METHOD</code>, and answers
+        <code class="bad-code">HTTP/1.1 400 Bad Request</code>.
+      </p>
+    </li>
+  </ol>
+
+  <h2>The fix</h2>
+  <p>
+    Propagate the client's abort to the upstream request. Destroying it takes the socket out of the
+    pool entirely, so it can never be handed to the next request:
+  </p>
+
+<pre class="diff"><code><span class="d-ctx">on: {</span><span class="d-ctx">  proxyReq: (proxyReq, req, res) =&gt; {</span><span class="d-add">+   const abortUpstream = () =&gt; {</span><span class="d-add">+     try { proxyReq.destroy?.(); } catch {}</span><span class="d-add">+   };</span><span class="d-add">+   req.on('aborted', abortUpstream);</span><span class="d-add">+   res.on('close',   abortUpstream);</span><span class="d-ctx">  },</span><span class="d-ctx">}</span></code></pre>
+
+  <p class="footnote">
+    The wider lesson: a proxy that is perfectly correct for request/response endpoints can still be
+    wrong for streaming ones. Request/response traffic rarely aborts mid-body, so the bug stays
+    hidden. Streaming aborts constantly — and every abandoned upstream request leaves a live socket
+    holding a half-finished message.
+  </p>
+</section>
+
+<footer class="colophon">
+  <p>
+    Every byte shown here was recorded from a real connection to a real
+    <code>http.createServer</code>. Regenerate with <code>npm run capture</code>.
+  </p>
+</footer>
+
+<script src="traces.js"></script>
+<script src="sim.js"></script>
+</body>
+</html>
