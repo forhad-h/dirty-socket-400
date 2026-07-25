@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-07-25T06:24:13.472Z",
+  "capturedAt": "2026-07-25T06:33:33.311Z",
   "nodeVersion": "v22.20.0",
   "platform": "linux x64",
   "mode": "broken",
@@ -25,7 +25,7 @@
       "actor": "proxy",
       "detail": "forwarded headers + 20 of 45 body bytes",
       "socketId": "sock-1",
-      "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:41023\r\nContent-Type: application/json\r\nContent-Length: 45\r\nConnection: keep-alive\r\n\r\n{\"message\":\"Hello\",\"",
+      "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:44847\r\nContent-Type: application/json\r\nContent-Length: 45\r\nConnection: keep-alive\r\n\r\n{\"message\":\"Hello\",\"",
       "owedBytes": 25
     },
     {
@@ -35,13 +35,13 @@
       "detail": "POST /chat-stream"
     },
     {
-      "t": 62,
+      "t": 63,
       "kind": "client:abort",
       "actor": "client",
       "detail": "user sends a follow-up; browser aborts the first request"
     },
     {
-      "t": 62,
+      "t": 63,
       "kind": "proxy:abandon-upstream",
       "actor": "proxy",
       "detail": "upstream request abandoned but never destroyed — socket returns to the pool",
@@ -49,7 +49,7 @@
       "owedBytes": 25
     },
     {
-      "t": 62,
+      "t": 63,
       "kind": "pool:state",
       "actor": "pool",
       "detail": "sock-1 marked idle (still owes 25 body bytes)",
@@ -58,13 +58,13 @@
       "healthy": false
     },
     {
-      "t": 122,
+      "t": 123,
       "kind": "client:send",
       "actor": "client",
       "detail": "user sends \"How are you?\""
     },
     {
-      "t": 122,
+      "t": 123,
       "kind": "pool:checkout",
       "actor": "pool",
       "detail": "pool reuses sock-1 — it looks idle, but it is mid-message",
@@ -77,7 +77,7 @@
       "actor": "proxy",
       "detail": "forwarded the follow-up (181 bytes)",
       "socketId": "sock-1",
-      "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:41023\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}"
+      "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:44847\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}"
     },
     {
       "t": 123,
@@ -87,30 +87,30 @@
       "socketId": "sock-1",
       "owedBytes": 25,
       "stolen": "POST /chat-stream HTTP/1.",
-      "resyncRemainder": "1\r\nHost: 127.0.0.1:41023\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}",
+      "resyncRemainder": "1\r\nHost: 127.0.0.1:44847\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}",
       "stitchedBody": "{\"message\":\"Hello\",\"POST /chat-stream HTTP/1."
     },
     {
-      "t": 125,
+      "t": 124,
       "kind": "upstream:parse-error",
       "actor": "upstream",
       "detail": "HPE_INVALID_METHOD — refusing the request"
     },
     {
-      "t": 127,
+      "t": 125,
       "kind": "upstream:bad-body",
       "actor": "upstream",
       "detail": "body was not valid JSON (45 bytes): \"{\\\"message\\\":\\\"Hello\\\",\\\"POST /chat-stream HTTP/1.\""
     },
     {
-      "t": 138,
+      "t": 128,
       "kind": "socket:closed",
       "actor": "upstream",
       "detail": "sock-1 closed",
       "socketId": "sock-1"
     },
     {
-      "t": 138,
+      "t": 128,
       "kind": "client:error",
       "actor": "client",
       "detail": "HTTP/1.1 400 Bad Request",
@@ -121,22 +121,22 @@
     "sock-1": {
       "id": "sock-1",
       "label": "proxy → upstream (pooled)",
-      "openedAt": 1784960652563,
-      "closedAt": 1784960652701,
+      "openedAt": 1784961212412,
+      "closedAt": 1784961212540,
       "frames": [
         {
           "dir": "out",
-          "at": 1784960652565,
-          "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:41023\r\nContent-Type: application/json\r\nContent-Length: 45\r\nConnection: keep-alive\r\n\r\n{\"message\":\"Hello\",\""
+          "at": 1784961212414,
+          "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:44847\r\nContent-Type: application/json\r\nContent-Length: 45\r\nConnection: keep-alive\r\n\r\n{\"message\":\"Hello\",\""
         },
         {
           "dir": "out",
-          "at": 1784960652685,
-          "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:41023\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}"
+          "at": 1784961212535,
+          "bytes": "POST /chat-stream HTTP/1.1\r\nHost: 127.0.0.1:44847\r\nContent-Type: application/json\r\nContent-Length: 52\r\nConnection: keep-alive\r\n\r\n{\"message\":\"How are you?\",\"sessionId\":\"sess-a1b2c3\"}"
         },
         {
           "dir": "in",
-          "at": 1784960652699,
+          "at": 1784961212539,
           "bytes": "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"
         }
       ]
