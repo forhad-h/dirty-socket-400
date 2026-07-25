@@ -8,6 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "proof": "bash evidence/proof.sh",
     "repro": "node server/raw-repro.js",
     "repro:broken": "node server/raw-repro.js --mode=broken",
     "repro:fixed": "node server/raw-repro.js --mode=fixed",

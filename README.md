@@ -14,12 +14,28 @@ browser simulator that replays the captured bytes so you can watch it happen.
 
 ## Quick start
 
-Nothing to install for the two things that matter:
+Nothing to install for the things that matter:
 
 ```bash
+bash evidence/proof.sh       # or: npm run proof — controlled experiment, printf + nc only
 node server/raw-repro.js     # or: npm run repro
 node server/serve-web.js     # or: npm run sim   → http://localhost:4173
 ```
+
+**[REPRODUCE.md](REPRODUCE.md) is the practical guide** — five ways to verify this yourself, from
+raw bytes through `nc` to the real proxy libraries.
+
+The shortest proof is `evidence/proof.sh`. It runs the same follow-up request three times, changing
+one variable at a time:
+
+| Case | Connection | First body | Follow-up gets |
+|---|---|---|---|
+| A | reused | complete | `200 OK` (twice) |
+| B | new | **partial** | `200 OK` |
+| C | **reused** | **partial** | **`400 Bad Request`** |
+
+The follow-up in case C is byte-for-byte identical to case B. Only the connection it travelled on
+changed. Reuse alone is fine, an abandoned request alone is fine, and the two together are the bug.
 
 ```
 BROKEN — proxy abandons the upstream request on client abort
@@ -129,6 +145,7 @@ does not propagate on its own, and it is the configuration `raw-repro.js` models
 
 | Command | Needs install | What it does |
 |---|---|---|
+| `npm run proof` | no | Controlled experiment with `printf` + `nc` |
 | `npm run repro` | no | Both modes, real 400 and real 200 |
 | `npm run repro:broken` / `:fixed` | no | One mode in isolation |
 | `npm run capture` | no | Re-records `traces/` and `web/traces.js` |
@@ -143,6 +160,9 @@ does not propagate on its own, and it is the configuration `raw-repro.js` models
 ## Layout
 
 ```
+evidence/
+  proof.sh        controlled experiment: printf + nc, three cases
+REPRODUCE.md      practical guide, five ways to verify it yourself
 server/
   upstream.js     real HTTP server; SSE token stream; logs parser errors
   raw-repro.js    the reproduction — zero dependencies

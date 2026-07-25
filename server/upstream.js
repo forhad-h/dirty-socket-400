@@ -154,3 +154,22 @@ function streamReply(req, res, parsed, onEvent) {
 }
 
 module.exports = { createUpstream, REPLIES, TOKEN_DELAY_MS };
+
+// Run it standalone so you can drive it by hand with nc, curl or any client:
+//   node server/upstream.js --port 8080
+if (require.main === module) {
+    const arg = process.argv.find((a) => a.startsWith('--port='));
+    const port = arg ? Number(arg.split('=')[1]) : 8080;
+
+    const server = createUpstream({
+        onEvent: (e) => {
+            if (e.type === 'upstream:token') return;
+            console.log(`  [upstream] ${e.type.replace('upstream:', '')}: ${e.detail}`);
+        },
+    });
+
+    server.listen(port, '127.0.0.1', () => {
+        console.log(`\n  Upstream Server listening on 127.0.0.1:${port}`);
+        console.log(`  POST /chat-stream with {"message":"Hello"} for an SSE reply.\n`);
+    });
+}
